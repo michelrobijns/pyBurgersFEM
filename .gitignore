@@ -102,3 +102,9 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+# Apple Desktop Services Store
+.DS_Store
+
+# Numpy files
+*.npy
