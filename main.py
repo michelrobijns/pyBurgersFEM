@@ -6,19 +6,19 @@ from fem.Burgers_model import BurgersModel
 
 
 def forcing_function(x, t):
-    return 1.0
+    return 0.0
 
 
 def left_boundary_value(t):
-    return 1.0
+    return 0.0
 
 
 def right_boundary_value(t):
-    return 1.0
+    return 0.0
 
 
 def initial_condition(x):
-    return 1.0 + x - x * x
+    return 1.0 + np.sin(2.0 * np.pi * x - 1.0)
 
 
 def main(args):
@@ -41,9 +41,9 @@ def main(args):
                          nu,
                          forcing_function,
                          left_boundary_value,
-                         "Dirichlet",
+                         None, #"Dirichlet",
                          right_boundary_value,
-                         "Dirichlet",
+                         None, #"Dirichlet",
                          initial_condition)
 
     # Allocate storage for the solution
