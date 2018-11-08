@@ -28,7 +28,7 @@ def main(args):
     x_left = 0.0
     x_right = 1.0
     t_begin = 0.0
-    t_end = 1.5
+    t_end = 2.0
     dt = 0.01
 
     # Create a vector containing the x-coordinates of the nodes
@@ -40,10 +40,8 @@ def main(args):
                          nodes,
                          nu,
                          forcing_function,
-                         left_boundary_value,
-                         None, #"Dirichlet",
-                         right_boundary_value,
-                         None, #"Dirichlet",
+                         None, #left_boundary_value,
+                         None, #right_boundary_value,
                          initial_condition)
 
     # Allocate storage for the solution

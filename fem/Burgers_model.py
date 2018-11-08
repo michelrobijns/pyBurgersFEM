@@ -12,9 +12,7 @@ class BurgersModel(object):
                  nu,
                  forcing_function,
                  left_boundary_value,
-                 left_boundary_type,
                  right_boundary_value,
-                 right_boundary_type,
                  initial_condition,
                  integration_points=3,
                  newton_iterations=20,
@@ -25,9 +23,7 @@ class BurgersModel(object):
         self.nu = nu
         self.forcing_function = forcing_function
         self.left_boundary_value = left_boundary_value
-        self.left_boundary_type = left_boundary_type
         self.right_boundary_value = right_boundary_value
-        self.right_boundary_type = right_boundary_type
         self.initial_condition = initial_condition
         self.integration_points = integration_points
         self.newton_iterations = newton_iterations
@@ -40,16 +36,12 @@ class BurgersModel(object):
         self.previous_coefficients = np.empty(self.number_of_nodes)
 
         # Check boundary conditions
-        if self.left_boundary_type == "Dirichlet" and self.right_boundary_type == "Dirichlet":
+        if self.left_boundary_value and self.right_boundary_value:
             print()
             print("Boundary conditions: Dirichlet")
-        elif self.left_boundary_type == None and self.right_boundary_type == None:
-            print()
-            print("Boundary conditions: periodic")
         else:
             print()
-            print("Unsupported boundary conditions, aborting.")
-            sys.exit()
+            print("Boundary conditions: periodic")
 
         # Store `Element' objects in `self.elements'
         self.elements = self.create_elements(number_of_elements)
@@ -95,7 +87,7 @@ class BurgersModel(object):
 
         # Starting guess
         #self.c = np.random.rand(self.number_of_nodes)
-        if self.left_boundary_type == "Dirichlet" and self.right_boundary_type == "Dirichlet":
+        if self.left_boundary_value and self.right_boundary_value:
             self.coefficients[0] = self.left_boundary_value(self.time)
             self.coefficients[-1] = self.right_boundary_value(self.time)
         # Starting guess is solution from previous timestep
@@ -107,12 +99,12 @@ class BurgersModel(object):
             self.assemble_J()
 
             # Solve the system and update `coefficients'
-            if self.left_boundary_type == "Dirichlet" and self.right_boundary_type == "Dirichlet":
+            if self.left_boundary_value and self.right_boundary_value:
                 # Modify the system to enforce the boundary conditions
                 self.constrain_system(self.J, self.F)
 
                 delta_coefficients = np.linalg.solve(self.J, -self.F)
-            if self.left_boundary_type == None and self.right_boundary_type == None:
+            else:
                 delta_coefficients = self.solve_cyclic(self.J, -self.F)
 
             self.coefficients += delta_coefficients
@@ -225,11 +217,11 @@ class BurgersModel(object):
         A = self.assemble_A()
         b = self.assemble_b()
 
-        if self.left_boundary_type == "Dirichlet" and self.right_boundary_type == "Dirichlet":
+        if self.left_boundary_value and self.right_boundary_value:
             self.apply_boundary_conditions(A, b, self.initial_condition(self.nodes[0]), self.initial_condition(self.nodes[-1]))
 
             return np.linalg.solve(A, b)
-        elif self.left_boundary_type == None and self.right_boundary_type == None:
+        else:
             return self.solve_cyclic(A, b)
 
 
