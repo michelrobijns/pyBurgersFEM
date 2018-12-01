@@ -9,12 +9,12 @@ def forcing_function(x, t):
     return 0.0
 
 
-def left_boundary_value(t):
-    return 0.0
+#def left_boundary_value(t):
+#    return 0.0
 
 
-def right_boundary_value(t):
-    return 0.0
+#def right_boundary_value(t):
+#    return 0.0
 
 
 def initial_condition(x):
@@ -39,10 +39,8 @@ def main(args):
     model = BurgersModel(number_of_elements,
                          nodes,
                          nu,
-                         forcing_function,
-                         None, #left_boundary_value,
-                         None, #right_boundary_value,
-                         initial_condition)
+                         initial_condition,
+                         forcing_function)
 
     # Allocate storage for the solution
     t = np.arange(t_begin, t_end + dt, dt)

@@ -10,10 +10,10 @@ class BurgersModel(object):
                  number_of_elements,
                  nodes,
                  nu,
-                 forcing_function,
-                 left_boundary_value,
-                 right_boundary_value,
                  initial_condition,
+                 forcing_function,
+                 left_boundary_value=None,
+                 right_boundary_value=None,
                  integration_points=3,
                  newton_iterations=20,
                  newton_tolerance=1e-6):
@@ -218,7 +218,7 @@ class BurgersModel(object):
         b = self.assemble_b()
 
         if self.left_boundary_value and self.right_boundary_value:
-            self.apply_boundary_conditions(A, b, self.initial_condition(self.nodes[0]), self.initial_condition(self.nodes[-1]))
+            self.apply_boundary_conditions(A, b, self.left_boundary_value(self.time), self.right_boundary_value(self.time))
 
             return np.linalg.solve(A, b)
         else:
