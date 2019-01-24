@@ -30,6 +30,11 @@ class LinearElement(object):
                self.previous_coefficients[self.indices[1]] * self.phi(x, 1)
 
 
+    def previous_du(self, x):
+        return self.previous_coefficients[self.indices[0]] * self.dphi(x, 0) + \
+               self.previous_coefficients[self.indices[1]] * self.dphi(x, 1)
+
+
     def phi(self, x, i):
         return piecewise_linear(x, i, self.nodes)
 

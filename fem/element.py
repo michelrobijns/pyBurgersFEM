@@ -47,6 +47,16 @@ class Element(object):
         return u
 
 
+    def previous_du(self, x):
+        x = np.asarray(x)
+        u = np.zeros_like(x)
+
+        for i, index in enumerate(self.indices):
+            u += self.previous_coefficients[index] * self.dphi(x, i)
+
+        return u
+
+
     def phi(self, x, i):
         return lagrange(x, i, self.nodes)
 

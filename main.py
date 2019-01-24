@@ -24,7 +24,7 @@ def initial_condition(x):
 def main(args):
     # Set variables that define the problem.
     nu = 0.01
-    number_of_elements = 128 if not args.elements else args.elements
+    number_of_elements = 1024 if not args.elements else args.elements
     x_left = 0.0
     x_right = 1.0
     t_begin = 0.0

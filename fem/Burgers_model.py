@@ -152,11 +152,14 @@ class BurgersModel(object):
 
                     # Evaluate variables at `ip_x'
                     u      = element.u(x_ip)
+                    u_prev = element.previous_u(x_ip)
                     du_dx  = element.du(x_ip)
-                    du_dt  = (u - element.previous_u(x_ip)) / dt
+                    du_dx_prev = element.previous_du(x_ip)
+                    du_dt  = (u - u_prev) / dt
                     phi_i  = element.phi(x_ip, i)
                     dphi_i = element.dphi(x_ip, i)
                     f      = self.forcing_function(x_ip, self.time)
+                    f_prev = self.forcing_function(x_ip, self.previous_time)
                     nu     = self.nu
 
                     # The value of the integrand at `ip_x' will be stored as `result'
@@ -166,13 +169,34 @@ class BurgersModel(object):
                     result += du_dt * phi_i
 
                     # Term 2
-                    result += -0.5 * u * u * dphi_i
+                    #result += -0.5 * u * u * dphi_i
 
                     # Term 3
-                    result += nu * du_dx * dphi_i
+                    #result += nu * du_dx * dphi_i
 
                     # Term 4
-                    result += -1.0 * f * phi_i
+                    #result += -1.0 * f * phi_i
+
+
+                    # Term 2
+                    result += -0.5 * u * u * dphi_i * 0.5
+
+                    # Term 3
+                    result += nu * du_dx * dphi_i * 0.5
+
+                    # Term 4
+                    result += -1.0 * f * phi_i * 0.5
+
+
+                    # Term 5
+                    result += -0.5 * u_prev * u_prev * dphi_i * 0.5
+
+                    # Term 6
+                    result += nu * du_dx_prev * dphi_i * 0.5
+
+                    # Term 7
+                    result += -1.0 * f_prev * phi_i * 0.5
+
 
                     # Shakib's stabilization
                     if self.stab_type == "Shakib":
