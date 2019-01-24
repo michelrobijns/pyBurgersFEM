@@ -6,25 +6,25 @@ from fem.Burgers_model import BurgersModel
 
 
 def forcing_function(x, t):
-    return 0.0
+    return 1.0
 
 
-#def left_boundary_value(t):
-#    return 0.0
+def left_boundary_value(t):
+    return 1.0
 
 
-#def right_boundary_value(t):
-#    return 0.0
+def right_boundary_value(t):
+    return 1.0
 
 
 def initial_condition(x):
-    return 1.0 + np.sin(2.0 * np.pi * x - 1.0)
+    return 1.0 + np.sin(2.0 * np.pi * x)
 
 
 def main(args):
     # Set variables that define the problem.
     nu = 0.01
-    number_of_elements = 1024 if not args.elements else args.elements
+    number_of_elements = 128 if not args.elements else args.elements
     x_left = 0.0
     x_right = 1.0
     t_begin = 0.0
@@ -40,7 +40,10 @@ def main(args):
                          nodes,
                          nu,
                          initial_condition,
-                         forcing_function)
+                         forcing_function,
+                         left_boundary_value,
+                         right_boundary_value,
+                         )
 
     # Allocate storage for the solution
     t = np.arange(t_begin, t_end + dt, dt)

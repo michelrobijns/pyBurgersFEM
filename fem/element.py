@@ -5,7 +5,8 @@ from fem.basis_functions import lagrange, derivative_lagrange
 
 class Element(object):
 
-    def __init__(self, nodes, indices, coefficients, previous_coefficients):
+    def __init__(self, index, nodes, indices, coefficients, previous_coefficients):
+        self.index = index
         self.nodes = nodes
         self.indices = indices
         self.coefficients = coefficients

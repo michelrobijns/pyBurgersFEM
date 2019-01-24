@@ -14,9 +14,11 @@ class BurgersModel(object):
                  forcing_function,
                  left_boundary_value=None,
                  right_boundary_value=None,
+                 use_nodal_projection=False,
                  integration_points=3,
-                 newton_iterations=20,
-                 newton_tolerance=1e-6):
+                 newton_iterations=100,
+                 newton_tolerance=1e-6,
+                 stab_type=None):
 
         self.number_of_elements = number_of_elements
         self.nodes = nodes
@@ -25,9 +27,11 @@ class BurgersModel(object):
         self.left_boundary_value = left_boundary_value
         self.right_boundary_value = right_boundary_value
         self.initial_condition = initial_condition
+        self.use_nodal_projection = use_nodal_projection
         self.integration_points = integration_points
         self.newton_iterations = newton_iterations
         self.newton_tolerance = newton_tolerance
+        self.stab_type = stab_type
 
         self.number_of_nodes = nodes.size
         self.nodes_per_element = 2
@@ -54,13 +58,20 @@ class BurgersModel(object):
         self.F = np.zeros(self.number_of_nodes)
 
         # Project the `initial_condition' function onto the finite element space
-        np.copyto(self.coefficients, self.project_initial_condition())
+        if use_nodal_projection:
+            np.copyto(self.coefficients, self.interpolate_initial_condition())
+
+            print()
+            print("Projection type for initial_condition: nodal")
+        else:
+            np.copyto(self.coefficients, self.project_initial_condition())
+
+        print()
 
 
     def create_elements(self, number_of_elements):
         print()
         print("Number of elements: {}".format(number_of_elements))
-        print()
 
         elements = []
 
@@ -68,7 +79,7 @@ class BurgersModel(object):
             local_nodes = [self.nodes[i], self.nodes[i+1]]
             indices = [i, i+1]
 
-            elements.append(LinearElement(local_nodes, indices,
+            elements.append(LinearElement(i, local_nodes, indices,
                                           self.coefficients,
                                           self.previous_coefficients))
 
@@ -117,6 +128,8 @@ class BurgersModel(object):
         if k == self.newton_iterations - 1:
             print('    Newton\'s method FAILED to converge within {} iterations'.format(k+1))
 
+        #self.energy_balance()
+
 
     def assemble_F(self, integration_points=3):
         dt = self.time - self.previous_time
@@ -161,9 +174,102 @@ class BurgersModel(object):
                     # Term 4
                     result += -1.0 * f * phi_i
 
+                    # Shakib's stabilization
+                    if self.stab_type == "Shakib":
+                        h2 = element.h * element.h
+                        h4 = h2 * h2
+                        tau = 1.0 / (sqrt(4.0 * u * u / h2 + 16.0 * self.nu * self.nu / h4))
+
+                        residual = du_dt + u * du_dx - f;
+
+                        uprime = -tau * residual
+
+                        result += -1.0 * u * uprime * dphi_i
+
+                        result += -0.5 * uprime * uprime * dphi_i
+
                     # Add `result' to `vector'
                     self.F[element.indices[i]] += \
                         ip_weights[ip] * 0.5 * element.h * result
+
+
+    def energy_balance(self, integration_points=3):
+        dt = self.time - self.previous_time
+
+        ip_ref_locs, ip_weights = self.integration_points_and_weights(integration_points)
+
+        kinetic_energy = 0.0
+        kinetic_energy_change = 0.0
+        net_flux = 0.0
+        viscous_work = 0.0
+        forcing_work = 0.0
+        boundary_terms = 0.0
+
+        # Loop over elements
+        for element in self.elements:
+            # Loop over integration points
+            for ip in range(integration_points):
+                # Get reference location of the integration point
+                ref_loc = ip_ref_locs[ip]
+
+                # Calculate x location of quadrature point
+                x_ip = element.x_left + 0.5 * (1 + ref_loc) * element.h
+
+                # Evaluate variables at `ip_x'
+                u      = element.u(x_ip)
+                du_dx  = element.du(x_ip)
+                du_dt  = (u - element.previous_u(x_ip)) / dt
+                f      = self.forcing_function(x_ip, self.time)
+                nu     = self.nu
+
+                kinetic_energy += \
+                    ip_weights[ip] * 0.5 * element.h * 0.5 * u * u
+
+                kinetic_energy_change += \
+                    ip_weights[ip] * 0.5 * element.h * u * du_dt
+
+                net_flux -= \
+                    ip_weights[ip] * 0.5 * element.h * 0.5 * du_dx * u * u
+
+                viscous_work -= \
+                    ip_weights[ip] * 0.5 * element.h * nu * du_dx * du_dx
+
+                forcing_work += \
+                    ip_weights[ip] * 0.5 * element.h * u * f
+
+            x_l = element.x_left
+            x_r = element.x_right
+
+            boundary_terms += 0.5 * element.u(x_r) * element.u(x_r) * element.u(x_r)
+            boundary_terms += -0.5 * element.u(x_l) * element.u(x_l) * element.u(x_l)
+
+            #boundary_terms += self.nu * element.u(x_r) * element.du(x_r)
+            #boundary_terms += -1.0 * self.nu * element.u(x_l) * element.du(x_l)
+
+        balance = net_flux + viscous_work + forcing_work
+
+        print()
+        print("    Kinetic energy:        {:.4f}".format(kinetic_energy))
+        print()
+        print("    Kinetic energy change: {:.4f}".format(kinetic_energy_change))
+        print("    Net flux:              {:.4f}".format(net_flux))
+        print("    Viscous work:          {:.4f}".format(viscous_work))
+        print("    Forcing work:          {:.4f}".format(forcing_work))
+        print()
+        print("    Balance:               {:.4f}".format(kinetic_energy_change - balance))
+        print()
+
+        #print("    {:.4f}".format(boundary_terms))
+
+        #print()
+        #print("    {:.4f}".format(0.5 * self.elements[-1].u(1.0) * self.elements[-1].u(1.0) * self.elements[-1].u(1.0)))
+        #print("    {:.4f}".format(-0.5 * self.elements[0].u(0.0) * self.elements[0].u(0.0) * self.elements[0].u(0.0)))
+        #print()
+
+        #print()
+        #print("    {:.4f}".format(self.nu * self.elements[-1].u(1.0) * self.elements[-1].du(1.0)))
+        #print("    {:.4f}".format(-1.0 * self.nu * self.elements[0].u(0.0) * self.elements[0].du(0.0)))
+        #print()
 
 
     def assemble_J(self, integration_points=3):
@@ -208,9 +314,26 @@ class BurgersModel(object):
                         # Term 3
                         result += nu * dphi_j * dphi_i
 
+                        if self.stab_type == "Shakib": # Shakib's stabilization
+                            du_dx = element.du(x_ip)
+
+                            h2 = element.h * element.h
+                            h4 = h2 * h2
+                            tau = 1.0 / (sqrt(4.0 * u * u / h2 + 16.0 * self.nu * self.nu / h4))
+
+                            result += 2.0 * tau * u * du_dx * dphi_i * phi_j
+
+                            result += tau * u * u * dphi_i * dphi_j
+
+                            result += -1.0 * tau * dphi_i * phi_j
+
                         # Add contribution to result
                         self.J[element.indices[i], element.indices[j]] += \
                             ip_weights[ip] * 0.5 * element.h * result
+
+
+    def interpolate_initial_condition(self):
+        return self.initial_condition(self.nodes)
 
 
     def project_initial_condition(self):
