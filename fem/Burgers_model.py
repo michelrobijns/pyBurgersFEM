@@ -165,8 +165,10 @@ class BurgersModel(object):
                     # The value of the integrand at `ip_x' will be stored as `result'
                     result = 0.0
 
+                    # Second-order timestep
+                    
                     # Term 1
-                    result += du_dt * phi_i
+                    #result += du_dt * phi_i
 
                     # Term 2
                     #result += -0.5 * u * u * dphi_i
@@ -177,6 +179,10 @@ class BurgersModel(object):
                     # Term 4
                     #result += -1.0 * f * phi_i
 
+                    # Third-order timestep (Crank-Nicolson)
+
+                    # Term 1
+                    result += du_dt * phi_i
 
                     # Term 2
                     result += -0.5 * u * u * dphi_i * 0.5
@@ -186,7 +192,6 @@ class BurgersModel(object):
 
                     # Term 4
                     result += -1.0 * f * phi_i * 0.5
-
 
                     # Term 5
                     result += -0.5 * u_prev * u_prev * dphi_i * 0.5
